@@ -8,9 +8,13 @@ import math
 
 RAW_FILE = 'signal-malvi108.wav'
 
+I_OUTPUT = 'i_signal.wav'
+Q_OUTPUT = 'q_signal.wav'
+
 TOP_SIGNAL_FILTER_RANGE = [125000, 136000]
 MIDDLE_SIGNAL_FILTER_RANGE = [80000, 110000]
 LOWER_SIGNAL_FILTER_RANGE = [45000, 65000]
+
 
 def band_pass_filter(data, order, start, end, sample_rate):
     b, a = signal.butter(order, [2 * start / sample_rate, 2 * end / sample_rate], 'bandpass', analog=False)
@@ -38,13 +42,41 @@ def plot_filter(order, cutoff, sample_rate):
     plt.show()
 
 
-def iq_demodulate(data, freq, bandwidth):
-    pass
+def iq_demodulate(data, band, delta, sample_rate):
+    start, end = band
+    center_freq = (start + end) // 2
+    bandwidth = end - start
 
+    print("Filtering out the interesting band...")
+
+    filtered_data = band_pass_filter(data, 10, start, end, sample_rate)
+
+    print("Multiplying x(t) with 2cos(2pi*fc*t + delta)...")
+
+    x_cos = []
+    for i in range(len(filtered_data)):
+        x_cos.append(2 * filtered_data[i] * np.cos(2 * np.pi * center_freq * i / sample_rate + delta))
+
+    print("Multiplying x(t) with 2sin(2pi*fc*t + delta)...")
+
+    x_sin = []
+    for i in range(len(filtered_data)):
+        x_sin.append(-2 * filtered_data[i] * np.sin(2 * np.pi * center_freq * i / sample_rate + delta))
+
+    print("Low pass filtering the xi(t) component...")
+    i_comp = low_pass_filter(np.array(x_cos), 10, bandwidth / 2, sample_rate)
+
+    print("Low pass filtering the xq(t) component...")
+    q_comp = low_pass_filter(np.array(x_sin), 10, bandwidth / 2, sample_rate)
+
+    print(i_comp)
+    print("Done demodulating.")
+
+    return i_comp, q_comp
+        
 
 def low_pass_plot_transform(data, sample_rate, cutoff):
     num_samples = len(data)
-    period = 1.0 / sample_rate
 
     new_data = low_pass_filter(data, 20, cutoff, sample_rate)
 
@@ -65,7 +97,6 @@ def low_pass_plot_transform(data, sample_rate, cutoff):
 
 def band_pass_plot_transform(data, sample_rate, band):
     num_samples = len(data)
-    period = 1.0 / sample_rate
 
     start, end = band
     new_data = band_pass_filter(data, 9, start, end, sample_rate)
@@ -85,10 +116,49 @@ def band_pass_plot_transform(data, sample_rate, band):
     plt.show()
 
 
+def plot_iq_transform(i_data, q_data, sample_rate):
+    num_samples = len(i_data)
+
+    i_transformed = fft(i_data)
+    q_transformed = fft(q_data)
+
+    xf = np.linspace(0.0, sample_rate // 2, num_samples // 2)
+    plt.subplot(2, 2, 1)
+    plt.plot(i_data, 'b')
+    plt.grid()
+
+    plt.subplot(2, 2, 2)
+    plt.plot(q_data, 'r')
+    plt.grid()
+
+    plt.subplot(2, 2, 3)
+    plt.plot(xf, 2.0 / num_samples * np.abs(i_transformed[0:num_samples // 2]), 'b')
+    plt.grid()
+
+    plt.subplot(2, 2, 4)
+    plt.plot(xf, 2.0 / num_samples * np.abs(q_transformed[0:num_samples // 2]), 'r')
+    plt.grid()
+    plt.show()
+
+
 def main():
     sample_rate, data = wavfile.read(RAW_FILE)
+    i, q = iq_demodulate(data, MIDDLE_SIGNAL_FILTER_RANGE, 0.2 * np.pi, sample_rate)
+
+    print("Normalizing...")
+    i_max = max(i)
+    i_norm = np.array([x / i_max for x in i])
+
+    q_max = max(q)
+    q_norm = np.array([x / q_max for x in q])
+
+    print("Writing output files...")
+    wavfile.write(I_OUTPUT, sample_rate, i_norm)
+    wavfile.write(Q_OUTPUT, sample_rate, q_norm)
+    print("Done.")
+    plot_iq_transform(i, q, sample_rate)
     # low_pass_plot_transform(data, sample_rate, 70000)
-    band_pass_plot_transform(data, sample_rate, LOWER_SIGNAL_FILTER_RANGE)
+    # band_pass_plot_transform(data, sample_rate, LOWER_SIGNAL_FILTER_RANGE)
     
 
 if __name__ == "__main__":
