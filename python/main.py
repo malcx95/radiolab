@@ -17,6 +17,7 @@ Q_OUTPUT = 'q_signal.wav'
 TOP_SIGNAL_FILTER_RANGE = [125000, 136000]
 MIDDLE_SIGNAL_FILTER_RANGE = [87000, 101000]
 LOWER_SIGNAL_FILTER_RANGE = [45000, 65000]
+W_RANGE = [139000, 144000]
 
 
 def band_pass_filter(data, order, start, end, sample_rate):
@@ -97,11 +98,11 @@ def low_pass_plot_transform(data, sample_rate, cutoff):
     plt.show()
 
 
-def band_pass_plot_transform(data, sample_rate, band):
+def band_pass_plot_transform(data, sample_rate, band, order=9):
     num_samples = len(data)
 
     start, end = band
-    new_data = band_pass_filter(data, 9, start, end, sample_rate)
+    new_data = band_pass_filter(data, order, start, end, sample_rate)
 
     transformed = fft(data)
     transformed_filtered = fft(new_data)
@@ -179,7 +180,8 @@ def remove_echo(data, delay, strength, sample_rate):
     sample_delay = int(sample_rate * delay)
     res = list(data[:sample_delay])
     for t in range(len(data) - sample_delay):
-        res.append(data[t + sample_delay] - strength * res[t])
+        # FIXME probably wrong
+        res.append(res[t] - strength * data[t + sample_delay])
     assert len(res) == len(data)
     return np.array(res)
 
@@ -198,13 +200,25 @@ def iq_demodulate_single(data, sample_rate, delta, delay, echo_strength):
     plot_iq_signals(i_norm, q_norm, sample_rate)
 
 
+def plot_w(data, sample_rate):
+    filtered_data = band_pass_filter(data, 7, *W_RANGE, sample_rate)
+    envelope = np.abs(signal.hilbert(filtered_data))
+    plt.rcParams['agg.path.chunksize'] = 1000
+    plt.plot(filtered_data, 'b')
+    plt.plot(envelope, 'g')
+    plt.grid()
+    plt.show()
+
+
 def main():
     sample_rate, data = wavfile.read(RAW_FILE)
 
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
 
-    iq_demodulate_single(data, sample_rate, 0.1, 0.3, 0.9)
+    # iq_demodulate_single(data, sample_rate, 0.1, 0.38, 0.9)
+
+    plot_w(data, sample_rate)
 
     # low_pass_plot_transform(data, sample_rate, 70000)
     # band_pass_plot_transform(data, sample_rate, MIDDLE_SIGNAL_FILTER_RANGE)
