@@ -1,6 +1,7 @@
 from scipy.fftpack import fft, ifft
 from scipy.io import wavfile
 from scipy import signal
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 import math
@@ -8,11 +9,13 @@ import math
 
 RAW_FILE = 'signal-malvi108.wav'
 
+OUTPUT_DIR = 'output'
+
 I_OUTPUT = 'i_signal.wav'
 Q_OUTPUT = 'q_signal.wav'
 
 TOP_SIGNAL_FILTER_RANGE = [125000, 136000]
-MIDDLE_SIGNAL_FILTER_RANGE = [80000, 110000]
+MIDDLE_SIGNAL_FILTER_RANGE = [87000, 101000]
 LOWER_SIGNAL_FILTER_RANGE = [45000, 65000]
 
 
@@ -69,7 +72,6 @@ def iq_demodulate(data, band, delta, sample_rate):
     print("Low pass filtering the xq(t) component...")
     q_comp = low_pass_filter(np.array(x_sin), 10, bandwidth / 2, sample_rate)
 
-    print(i_comp)
     print("Done demodulating.")
 
     return i_comp, q_comp
@@ -116,49 +118,96 @@ def band_pass_plot_transform(data, sample_rate, band):
     plt.show()
 
 
-def plot_iq_transform(i_data, q_data, sample_rate):
+def normalize(data):
+    """
+    Scales all elements in the data so they are all between -1 and 1.
+    """
+    data_max = max([abs(x) for x in data])
+    return np.array([x / data_max for x in data])
+
+
+def plot_iq_signals(i_data, q_data, sample_rate):
     num_samples = len(i_data)
 
     i_transformed = fft(i_data)
     q_transformed = fft(q_data)
 
     xf = np.linspace(0.0, sample_rate // 2, num_samples // 2)
+
     plt.subplot(2, 2, 1)
     plt.plot(i_data, 'b')
+    plt.title("xI(t)")
     plt.grid()
 
     plt.subplot(2, 2, 2)
     plt.plot(q_data, 'r')
+    plt.title("xQ(t)")
     plt.grid()
 
     plt.subplot(2, 2, 3)
     plt.plot(xf, 2.0 / num_samples * np.abs(i_transformed[0:num_samples // 2]), 'b')
+    plt.title("|XI(f)|")
     plt.grid()
 
     plt.subplot(2, 2, 4)
     plt.plot(xf, 2.0 / num_samples * np.abs(q_transformed[0:num_samples // 2]), 'r')
+    plt.title("|XQ(f)|")
     plt.grid()
     plt.show()
 
 
-def main():
-    sample_rate, data = wavfile.read(RAW_FILE)
-    i, q = iq_demodulate(data, MIDDLE_SIGNAL_FILTER_RANGE, 0.2 * np.pi, sample_rate)
+def iq_demodulate_different_deltas(sample_rate, data):
+    for n in range(10):
 
-    print("Normalizing...")
-    i_max = max(i)
-    i_norm = np.array([x / i_max for x in i])
+        d = n / 20
+        i, q = iq_demodulate(data, MIDDLE_SIGNAL_FILTER_RANGE, d * np.pi, sample_rate)
 
-    q_max = max(q)
-    q_norm = np.array([x / q_max for x in q])
+        print("Normalizing...")
+        i_norm = normalize(i)
+        q_norm = normalize(q)
+
+        print("Writing output files...")
+        wavfile.write(os.path.join(OUTPUT_DIR, str(d).replace('.', '_') + I_OUTPUT), sample_rate, i_norm)
+        wavfile.write(os.path.join(OUTPUT_DIR, str(d).replace('.', '_') + Q_OUTPUT), sample_rate, q_norm)
+        print("Done.")
+
+
+def remove_echo(data, delay, strength, sample_rate):
+    """
+    Removes echo from the data with the given delay (seconds) and echo strength.
+    """
+    sample_delay = int(sample_rate * delay)
+    res = list(data[:sample_delay])
+    for t in range(len(data) - sample_delay):
+        res.append(data[t + sample_delay] - strength * res[t])
+    assert len(res) == len(data)
+    return np.array(res)
+
+
+def iq_demodulate_single(data, sample_rate, delta, delay, echo_strength):
+    i, q = iq_demodulate(data, MIDDLE_SIGNAL_FILTER_RANGE, delta * np.pi, sample_rate)
+
+    print("Normalizing and removing echo...")
+    i_norm = normalize(remove_echo(i, delay, echo_strength, sample_rate))
+    q_norm = normalize(remove_echo(q, delay, echo_strength, sample_rate))
 
     print("Writing output files...")
-    wavfile.write(I_OUTPUT, sample_rate, i_norm)
-    wavfile.write(Q_OUTPUT, sample_rate, q_norm)
-    print("Done.")
-    plot_iq_transform(i, q, sample_rate)
+    wavfile.write(os.path.join(OUTPUT_DIR, I_OUTPUT), sample_rate, i_norm)
+    wavfile.write(os.path.join(OUTPUT_DIR, Q_OUTPUT), sample_rate, q_norm)
+
+    plot_iq_signals(i_norm, q_norm, sample_rate)
+
+
+def main():
+    sample_rate, data = wavfile.read(RAW_FILE)
+
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+
+    iq_demodulate_single(data, sample_rate, 0.1, 0.3, 0.9)
+
     # low_pass_plot_transform(data, sample_rate, 70000)
-    # band_pass_plot_transform(data, sample_rate, LOWER_SIGNAL_FILTER_RANGE)
+    # band_pass_plot_transform(data, sample_rate, MIDDLE_SIGNAL_FILTER_RANGE)
     
 
 if __name__ == "__main__":
