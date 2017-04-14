@@ -19,6 +19,9 @@ MIDDLE_SIGNAL_FILTER_RANGE = [87000, 101000]
 LOWER_SIGNAL_FILTER_RANGE = [45000, 65000]
 W_RANGE = [139000, 144000]
 
+W_F1 = 141500
+W_F2 = 141501
+
 
 def band_pass_filter(data, order, start, end, sample_rate):
     b, a = signal.butter(order, [2 * start / sample_rate, 2 * end / sample_rate], 'bandpass', analog=False)
@@ -210,6 +213,19 @@ def plot_w(data, sample_rate):
     plt.show()
 
 
+def correlation_function(data, sample_rate):
+    filtered_data = band_pass_filter(data, 7, *W_RANGE, sample_rate)
+    w1 = 2 * np.pi * W_F1
+    w2 = 2 * np.pi * W_F2
+    x = [0.001 * (np.cos(w1 * t / sample_rate) + np.cos(w2 * t / sample_rate)) 
+         for t in range(len(data))]
+    correlated = signal.convolve(np.array([a for a in reversed(x)]), filtered_data, mode="same", method="auto")
+    plt.rcParams['agg.path.chunksize'] = 1000
+    plt.plot(correlated, 'b')
+    plt.grid()
+    plt.show()
+    
+
 def main():
     sample_rate, data = wavfile.read(RAW_FILE)
 
@@ -218,7 +234,7 @@ def main():
 
     # iq_demodulate_single(data, sample_rate, 0.1, 0.38, 0.9)
 
-    plot_w(data, sample_rate)
+    correlation_function(data, sample_rate)
 
     # low_pass_plot_transform(data, sample_rate, 70000)
     # band_pass_plot_transform(data, sample_rate, MIDDLE_SIGNAL_FILTER_RANGE)
