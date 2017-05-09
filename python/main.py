@@ -5,7 +5,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import math
-
+import taucalc
 
 RAW_FILE = 'signal-malvi108.wav'
 
@@ -21,6 +21,8 @@ W_RANGE = [139000, 144000]
 
 W_F1 = 141500
 W_F2 = 141501
+
+W_FILTER_ORDER = 8
 
 
 def band_pass_filter(data, order, start, end, sample_rate):
@@ -107,19 +109,27 @@ def band_pass_plot_transform(data, sample_rate, band, order=9):
     start, end = band
     new_data = band_pass_filter(data, order, start, end, sample_rate)
 
+    b, a = signal.butter(order, [2 * start / sample_rate, 2 * end / sample_rate], 'bandpass', analog=False)
+    w, h = signal.freqz(b, a)
+
     transformed = fft(data)
     transformed_filtered = fft(new_data)
 
     xf = np.linspace(0.0, sample_rate // 2, num_samples // 2)
-    plt.subplot(2, 1, 1)
+    plt.subplot(2, 2, 1)
     plt.plot(xf, 2.0 / num_samples * np.abs(transformed[0:num_samples // 2]), 'b')
     plt.grid()
 
+    plt.subplot(2, 2, 2)
+    plt.plot(0.5 * sample_rate * w/math.pi, np.abs(h), 'g')
+    plt.grid()
+
     # plot the filtered transform
-    plt.subplot(2, 1, 2)
+    plt.subplot(2, 2, 3)
     plt.plot(xf, 2.0 / num_samples * np.abs(transformed_filtered[0:num_samples // 2]), 'r')
     plt.grid()
     plt.show()
+
 
 
 def normalize(data):
@@ -226,15 +236,40 @@ def correlation_function(data, sample_rate):
     plt.show()
     
 
+def write_file(file_name, data, sample_rate):
+    decimated = []
+    for i in range(0, len(data), 10):
+        decimated.append(data[i])
+    wavfile.write(file_name, sample_rate / 10, decimated)
+
+
 def main():
     sample_rate, data = wavfile.read(RAW_FILE)
 
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
 
+    y = band_pass_filter(data, W_FILTER_ORDER, *W_RANGE, sample_rate)
+    y_transformed = fft(y)
+
+    h_transformed = taucalc.get_h_transformed(y_transformed, len(y), sample_rate)
+
+    print("H(f1) = {}, H(f2) = {}".format(h_transformed[W_F1], h_transformed[W_F2]))
+    print("H(0) = {}".format(h_transformed[0]))
+
+    xf = np.linspace(0.0, sample_rate // 2, len(y) // 2)
+    plt.plot(xf, 2.0 / len(y) * np.abs(h_transformed[0:len(y) // 2]), 'b')
+    plt.grid()
+    plt.show()
+
+
+    
     # iq_demodulate_single(data, sample_rate, 0.1, 0.38, 0.9)
 
-    correlation_function(data, sample_rate)
+    # correlation_function(data, sample_rate)
+    # band_pass_plot_transform(data, sample_rate, W_RANGE, order=8)
+
+    
 
     # low_pass_plot_transform(data, sample_rate, 70000)
     # band_pass_plot_transform(data, sample_rate, MIDDLE_SIGNAL_FILTER_RANGE)
@@ -242,4 +277,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
