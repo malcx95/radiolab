@@ -15,14 +15,20 @@ I_OUTPUT = 'i_signal.wav'
 Q_OUTPUT = 'q_signal.wav'
 
 TOP_SIGNAL_FILTER_RANGE = [125000, 136000]
-MIDDLE_SIGNAL_FILTER_RANGE = [87000, 101000]
+MIDDLE_SIGNAL_FILTER_RANGE = [88000, 100000]
 LOWER_SIGNAL_FILTER_RANGE = [45000, 65000]
 W_RANGE = [139000, 144000]
 
+DELTA = 0.24
+
 W_F1 = 141500
 W_F2 = 141501
-
 W_FILTER_ORDER = 8
+
+# tau2 - tau1 in ms
+TIME_DELAY = 0.420
+
+ECHO_STRENGTH = 0.9
 
 
 def band_pass_filter(data, order, start, end, sample_rate):
@@ -53,12 +59,15 @@ def plot_filter(order, cutoff, sample_rate):
 
 def iq_demodulate(data, band, delta, sample_rate):
     start, end = band
-    center_freq = (start + end) // 2
+    center_freq = (start + end) / 2
     bandwidth = end - start
+
+    print("Removing echo...")
+    no_echo = remove_echo(data, sample_rate)
 
     print("Filtering out the interesting band...")
 
-    filtered_data = band_pass_filter(data, 10, start, end, sample_rate)
+    filtered_data = band_pass_filter(no_echo, 10, start, end, sample_rate)
 
     print("Multiplying x(t) with 2cos(2pi*fc*t + delta)...")
 
@@ -170,7 +179,7 @@ def plot_iq_signals(i_data, q_data, sample_rate):
     plt.show()
 
 
-def iq_demodulate_different_deltas(sample_rate, data):
+def iq_demodulate_different_deltas(data, sample_rate):
     for n in range(10):
 
         d = n / 20
@@ -181,34 +190,33 @@ def iq_demodulate_different_deltas(sample_rate, data):
         q_norm = normalize(q)
 
         print("Writing output files...")
-        wavfile.write(os.path.join(OUTPUT_DIR, str(d).replace('.', '_') + I_OUTPUT), sample_rate, i_norm)
-        wavfile.write(os.path.join(OUTPUT_DIR, str(d).replace('.', '_') + Q_OUTPUT), sample_rate, q_norm)
+        write_file(os.path.join(OUTPUT_DIR, str(d).replace('.', '_') + I_OUTPUT), sample_rate, i_norm)
+        write_file(os.path.join(OUTPUT_DIR, str(d).replace('.', '_') + Q_OUTPUT), sample_rate, q_norm)
         print("Done.")
 
 
-def remove_echo(data, delay, strength, sample_rate):
+def remove_echo(data, sample_rate):
     """
-    Removes echo from the data with the given delay (seconds) and echo strength.
+    Removes echo from the data.
     """
-    sample_delay = int(sample_rate * delay)
-    res = list(data[:sample_delay])
-    for t in range(len(data) - sample_delay):
-        # FIXME probably wrong
-        res.append(res[t] - strength * data[t + sample_delay])
-    assert len(res) == len(data)
+    res = list(data)
+    delay_in_samples = int(TIME_DELAY * sample_rate)
+
+    for i in range(len(data) - delay_in_samples):
+        res[i + delay_in_samples] -= ECHO_STRENGTH * res[i]
     return np.array(res)
 
 
-def iq_demodulate_single(data, sample_rate, delta, delay, echo_strength):
+def iq_demodulate_single(data, sample_rate, delta):
     i, q = iq_demodulate(data, MIDDLE_SIGNAL_FILTER_RANGE, delta * np.pi, sample_rate)
 
-    print("Normalizing and removing echo...")
-    i_norm = normalize(remove_echo(i, delay, echo_strength, sample_rate))
-    q_norm = normalize(remove_echo(q, delay, echo_strength, sample_rate))
+    print("Normalizing...")
+    i_norm = normalize(i)
+    q_norm = normalize(q)
 
     print("Writing output files...")
-    wavfile.write(os.path.join(OUTPUT_DIR, I_OUTPUT), sample_rate, i_norm)
-    wavfile.write(os.path.join(OUTPUT_DIR, Q_OUTPUT), sample_rate, q_norm)
+    write_file(os.path.join(OUTPUT_DIR, I_OUTPUT), sample_rate, i_norm)
+    write_file(os.path.join(OUTPUT_DIR, Q_OUTPUT), sample_rate, q_norm)
 
     plot_iq_signals(i_norm, q_norm, sample_rate)
 
@@ -221,26 +229,13 @@ def plot_w(data, sample_rate):
     plt.plot(envelope, 'g')
     plt.grid()
     plt.show()
-
-
-def correlation_function(data, sample_rate):
-    filtered_data = band_pass_filter(data, 7, *W_RANGE, sample_rate)
-    w1 = 2 * np.pi * W_F1
-    w2 = 2 * np.pi * W_F2
-    x = [0.001 * (np.cos(w1 * t / sample_rate) + np.cos(w2 * t / sample_rate)) 
-         for t in range(len(data))]
-    correlated = signal.convolve(np.array([a for a in reversed(x)]), filtered_data, mode="same", method="auto")
-    plt.rcParams['agg.path.chunksize'] = 1000
-    plt.plot(correlated, 'b')
-    plt.grid()
-    plt.show()
     
 
-def write_file(file_name, data, sample_rate):
+def write_file(file_name, sample_rate, data):
     decimated = []
     for i in range(0, len(data), 10):
         decimated.append(data[i])
-    wavfile.write(file_name, sample_rate / 10, decimated)
+    wavfile.write(file_name, sample_rate // 10, np.array(decimated))
 
 
 def main():
@@ -249,22 +244,30 @@ def main():
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
 
-    y = band_pass_filter(data, W_FILTER_ORDER, *W_RANGE, sample_rate)
-    y_transformed = fft(y)
+    # noise = band_pass_filter(data, 10, *LOWER_SIGNAL_FILTER_RANGE, sample_rate)
 
-    h_transformed = taucalc.get_h_transformed(y_transformed, len(y), sample_rate)
-
-    print("H(f1) = {}, H(f2) = {}".format(h_transformed[W_F1], h_transformed[W_F2]))
-    print("H(0) = {}".format(h_transformed[0]))
-
-    xf = np.linspace(0.0, sample_rate // 2, len(y) // 2)
-    plt.plot(xf, 2.0 / len(y) * np.abs(h_transformed[0:len(y) // 2]), 'b')
-    plt.grid()
-    plt.show()
+    # correlation = taucalc.correlation_function(noise, sample_rate)
+    # taucalc.plot_correlation(correlation)
 
 
     
-    # iq_demodulate_single(data, sample_rate, 0.1, 0.38, 0.9)
+    # y = band_pass_filter(data, W_FILTER_ORDER, *W_RANGE, sample_rate)
+    # y_transformed = fft(y)
+
+    # h_transformed = taucalc.get_h_transformed(y_transformed, len(y), sample_rate)
+
+    # print("H(f1) = {}, H(f2) = {}".format(h_transformed[W_F1], h_transformed[W_F2]))
+    # print("H(0) = {}".format(h_transformed[0]))
+
+    # xf = np.linspace(0.0, sample_rate // 2, len(y) // 2)
+    # plt.plot(xf, 2.0 / len(y) * np.abs(h_transformed[0:len(y) // 2]), 'b')
+
+    # H = taucalc.calculate_h_transformed(W_F1, W_F2)
+    # print(H)
+
+
+    
+    iq_demodulate_single(data, sample_rate, 0.24)
 
     # correlation_function(data, sample_rate)
     # band_pass_plot_transform(data, sample_rate, W_RANGE, order=8)
@@ -277,3 +280,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
