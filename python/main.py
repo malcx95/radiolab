@@ -248,8 +248,6 @@ def main():
 
     # correlation = taucalc.correlation_function(noise, sample_rate)
     # taucalc.plot_correlation(correlation)
-
-
     
     # y = band_pass_filter(data, W_FILTER_ORDER, *W_RANGE, sample_rate)
     # y_transformed = fft(y)
@@ -264,15 +262,11 @@ def main():
 
     # H = taucalc.calculate_h_transformed(W_F1, W_F2)
     # print(H)
-
-
     
     iq_demodulate_single(data, sample_rate, 0.24)
 
     # correlation_function(data, sample_rate)
     # band_pass_plot_transform(data, sample_rate, W_RANGE, order=8)
-
-    
 
     # low_pass_plot_transform(data, sample_rate, 70000)
     # band_pass_plot_transform(data, sample_rate, MIDDLE_SIGNAL_FILTER_RANGE)

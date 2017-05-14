@@ -28,7 +28,28 @@
 
 \section{Inledning}
 
-Denna laboration gick ut på att...
+Syftet med denna laboration var att IQ-demodulera och behandla en radiosignal
+för att kunna höra vad som sändes. Enligt problemformuleringen skickar
+radiostationen signalen:
+\begin{align*}
+    x(t) = x_I(t)\cos(2 \pi f_c t) - x_Q(t)\sin(2 \pi f_c t) + w(t) + z(t)
+\end{align*}
+där $x_Q(t)$ och $x_I(t)$ är de meddelanden som ska lyssnas efter. De
+innehåller båda två olika melodier samt var sitt ordspråk som ska identifieras.
+$f_c$ är signalens bärfrekvens, $z(t)$ är en summa av andra I/Q-modulerade
+signaler och $w(t) = 0.001(\cos(2 \pi f_1 t) + \cos(2 \pi))$, där $f_1$ och
+$f_2$ ligger långt ifrån bärfrekvenserna hos de andra signalerna. En del av
+uppgiften är att ta reda på $f_c$, $f_1$ och $f_2$.
+
+På grund av utformningen hos miljön innehåller den mottagna signalen en
+ekoeffekt, sådan att vi tar emot signalen:
+\begin{align*}
+    y(t) = x(t - \tau_1) + 0.9x(t - \tau_2)
+\end{align*}
+En del av uppgiften är att ta reda på fördröjningen mellan de olika signalerna,
+alltså $\tau_2 - \tau_1$.
+
+Signalen är sparad i en \textit{wav}-fil med sampelfrekvensen 400kHz.
 
 \section{Metod}
 
@@ -40,6 +61,9 @@ Den sökta informationen är:
 \begin{itemize}
 \item Bärfrekvensen för nyttosignalen är $f_c=94$ kHz.
 \item $f_1=141500$ Hz och $f_2=141501$ Hz
+\item $\tau_2 - \tau_1 = 420$ ms.
+\item Ordspråket i $x_I(t)$ är "Väck inte den björn som sover".
+\item Ordspråket i $x_Q(t)$ är "Äpplet faller inte långt från trädet".
 \end{itemize}
 
 \clearpage
