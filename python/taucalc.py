@@ -27,10 +27,12 @@ def get_h_transformed(y_transformed, length, sample_rate):
         result.append(np.abs(y_transformed[i] / x[i]) if x[i] != 0 else float('nan'))
     return result
 
+
 def calculate_h_transformed(f1, f2):
     return [np.abs(1 + 0.9 * np.exp(-1j * 2 * np.pi * f1 * tau)) +
             np.abs(1 + 0.9 * np.exp(-1j * 2 * np.pi * f2 * tau))
             for tau in range(500)]
+
 
 def correlation_function(data, sample_rate):
     result = []
@@ -47,6 +49,7 @@ def correlation_function(data, sample_rate):
         result.append(sum_)
 
     return np.array(result)
+
 
 def plot_correlation(correlation):
     plt.plot(correlation, 'b')

@@ -140,7 +140,6 @@ def band_pass_plot_transform(data, sample_rate, band, order=9):
     plt.show()
 
 
-
 def normalize(data):
     """
     Scales all elements in the data so they are all between -1 and 1.
@@ -238,11 +237,25 @@ def write_file(file_name, sample_rate, data):
     wavfile.write(file_name, sample_rate // 10, np.array(decimated))
 
 
+def plot_signal_transform(data, sample_rate):
+    num_samples = len(data)
+    transformed = fft(data)
+
+    xf = np.linspace(0.0, sample_rate // 2, num_samples // 2)
+    plt.plot(xf, 2.0 / num_samples * np.abs(transformed[0:num_samples // 2]), 'b')
+    plt.xlabel('Frekvens [Hz]')
+    plt.ylabel('Amplitud')
+    plt.grid()
+    plt.show()
+
+
 def main():
     sample_rate, data = wavfile.read(RAW_FILE)
 
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
+
+    plot_signal_transform(data, sample_rate)
 
     # noise = band_pass_filter(data, 10, *LOWER_SIGNAL_FILTER_RANGE, sample_rate)
 
@@ -263,7 +276,7 @@ def main():
     # H = taucalc.calculate_h_transformed(W_F1, W_F2)
     # print(H)
     
-    iq_demodulate_single(data, sample_rate, 0.24)
+    # iq_demodulate_single(data, sample_rate, 0.24)
 
     # correlation_function(data, sample_rate)
     # band_pass_plot_transform(data, sample_rate, W_RANGE, order=8)
@@ -274,4 +287,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
