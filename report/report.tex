@@ -110,14 +110,14 @@ hörs inget eko, vilket betyder att man kan använda signalen fram till $\tau_d$
 sekunder som det som ska korreleras, där $\tau_d < \tau_2$.
 
 Vi betecknar signalvärdet vid sampel $n$ som $y_n$. Vidare definierar vi korrelationen
-$z(\tau)$ som:
+$z(\tau)$ som, där $f_s$ är sampelfrekvensen:
 
 \begin{equation*}
-    z(\tau) = \frac{1}{f_s}\sum_{i=0}^{\tau_d - 1}y_iy_{i + \tau f_s}
+    z(\tau) = \frac{1}{f_s}\sum_{i=0}^{\tau_d f_s}y_iy_{i + \tau f_s}
 \end{equation*}
 
-Detta gör att $z(\tau)$ blir ett mått på hur början av $y(t)$ upp till $\tau_d$
-"passar" med resten av $y(t)$ när det är förskjutet med $\tau$ sekunder. Vi
+Detta gör att $z(\tau)$ blir ett mått på hur början av $y(t)$ 
+"passar" med hela $y(t)$ när det är förskjutet med $\tau$ sekunder. Vi
 borde därför se en topp i $z(\tau)$ vid $\tau = 0$ och en mindre topp där $\tau
 = \tau_2 - \tau_1$, eftersom det är då ekot börjar.
 
