@@ -14,6 +14,31 @@
 \usepackage{spverbatim}
 \usepackage{graphicx}
 
+\hyphenation{au-to-kor-re-la-ti-on}
+
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{color}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{%
+    aboveskip=3mm,
+    belowskip=3mm,
+    showstringspaces=false,
+    columns=flexible,
+    basicstyle={\small\ttfamily},
+    numbers=none,
+    numberstyle=\tiny\color{red},
+    keywordstyle=\color{blue},
+    commentstyle=\color{dkgreen},
+    stringstyle=\color{mauve},
+    breaklines=true,
+    breakatwhitespace=true,
+    tabsize=3
+}
+
 \renewcommand{\figurename}{Figur}
 
 \raggedbottom
@@ -21,7 +46,7 @@
 
 \title{Laborationsrapport i TSKS10 \emph{Signaler, Information och Kommunikation}}
 
-\author{Malcolm Vigren \\ malvi108, 19950127-0970 }
+\author{Malcolm Vigren \\ malvi108, 19950127--0970 }
 
 \date{16 maj, 2017}
 
@@ -31,7 +56,7 @@
 
 \section{Inledning}
 
-Syftet med denna laboration var att IQ-demodulera och behandla en radiosignal
+Syftet med denna laboration var att I/Q-demodulera och behandla en radiosignal
 för att kunna höra vad som sändes. Enligt problemformuleringen skickar
 radiostationen signalen:
 \begin{align*}
@@ -46,7 +71,7 @@ uppgiften var att ta reda på $f_c$, $f_1$ och $f_2$. $f_c$ var enligt
 problemformuleringen en av följande frekvenser: 18, 37, 56, 75, 94, 113,
 132, 151 kHz.
 
-På grund av utformningen hos miljön innehåller den mottagna signalen en
+På grund av utformningen av miljön innehåller den mottagna signalen en
 ekoeffekt, sådan att vi tar emot signalen:
 \begin{align*}
     y(t) = x(t - \tau_1) + 0.9x(t - \tau_2)
@@ -70,27 +95,27 @@ För att ta reda på $f_c$ fouriertransformerades signalen i wav-filen, och
 amplitudspektrumet plottades, se Figur~\ref{fig:yamp}. 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\linewidth]{figures/yamp.pdf}
+    \includegraphics[width=0.85\linewidth]{figures/yamp.pdf}
     \caption{Amplitudspektrum för $y(t)$}
     \label{fig:yamp}
 \end{figure}
-Från detta kunde den del kandidater till $f_c$ uteslutas, sådan att
+Från detta kunde en del kandidater till $f_c$ uteslutas, sådan att
 de möjliga värdena var 56, 94, 132 kHz, då det är runt dessa frekvenser de
-olika signalerna samlas runt. Från detta kan också frekvenserna för
+olika signalerna samlades runt. Från detta kunde också frekvenserna för
 cosinussignalerna från $w(t)$
-bestämmas, då dessa är två mycket närliggande spikar vid 141500 respektive
+bestämmas, då dessa var två mycket närliggande spikar vid 141500 respektive
 141501 Hz. Alltså är $f_1=141500$ Hz och $f_2=141501$ Hz.
 
 \subsection{I/Q-demodulering\label{sub:iq}}
-För att demodulera signalen bandpassfiltrerades signalen för att extrahera
-signalen för en viss frekvens. Detta gjordes genom att bestämma vilka
+För att demodulera signalen bandpassfiltrerades den för att extrahera
+signalen för en viss bärfrekvens. Detta gjordes genom att bestämma vilka
 frekvensband varje signal befann sig i från Figur~\ref{fig:yamp}, och använda
 ett digitalt butterworthfilter för att filtrera ut signalen. Den filtrerade
 signalen multiplicerades med $2\cos(2\pi f_c t + \delta)$ och 
 $-2\sin(2\pi f_c t + \delta)$ 
 för att få ut $x_I(t)$- respektive $x_Q(t)$-komponenterna av signalen.
-Konstanten $\delta$ finns som kompensation för fasvridningen signalen får efter
-att den skickats, som sattes till en början till 0 och prövades fram till
+Konstanten $\delta$ fanns som kompensation för fasvridningen signalen fick efter
+att den skickats över kanalen, som sattes till en början till 0 och prövades fram till
 värdet $0.24\pi$ genom upprepad demodulation med olika $\delta$. Båda
 lågpassfiltrerades sedan med ett digitalt butterworthfilter med samma bandbredd
 som signalerna för att filtrera
@@ -107,7 +132,7 @@ liknande vitt brus.
 För att bestämma fördröjningen $\tau_2 - \tau_1$ användes autokorrelation. För
 att göra detta utnyttjades det faktum att $\tau_2$ sekunder in i signalen
 hörs inget eko, vilket betyder att man kan använda signalen fram till $\tau_d$
-sekunder som det som ska korreleras, där $\tau_d < \tau_2$.
+sekunder som det som ska korreleras, för något $\tau_d < \tau_2$.
 
 Vi betecknar signalvärdet vid sampel $n$ som $y_n$. Vidare definierar vi korrelationen
 $z(\tau)$ som, där $f_s$ är sampelfrekvensen:
@@ -116,9 +141,10 @@ $z(\tau)$ som, där $f_s$ är sampelfrekvensen:
     z(\tau) = \frac{1}{f_s}\sum_{i=0}^{\tau_d f_s}y_iy_{i + \tau f_s}
 \end{equation*}
 
-Detta gör att $z(\tau)$ blir ett mått på hur början av $y(t)$ 
+Detta gör att $z(\tau)$ blir ett mått på hur början av $y(t)$ ($y(t)$ för $0
+\leq t \leq \tau_d$)
 "passar" med hela $y(t)$ när det är förskjutet med $\tau$ sekunder. Vi
-borde därför se en topp i $z(\tau)$ vid $\tau = 0$ och en mindre topp där $\tau
+borde därför se en topp i $z(\tau)$ vid $\tau = 0$, eftersom signalerna är identiska då, och en mindre topp där $\tau
 = \tau_2 - \tau_1$, eftersom det är då ekot börjar.
 
 $\tau_d$ valdes till 0.25 sekunder. Signalen som skulle korreleras valdes till det
@@ -127,23 +153,23 @@ $z(\tau)$ beräknades för $0 \leq \tau < 500$ ms, se Figur~\ref{fig:corr}.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\linewidth]{figures/corr.pdf}
+    \includegraphics[width=0.85\linewidth]{figures/corr.pdf}
     \caption{Korrelationen $z(\tau)$}
     \label{fig:corr}
 \end{figure}
 
-Avläsning ur grafen för $z(\tau)$ visar en topp vid $\tau = 420$ ms, vilket
-betyder att $\tau_2 - \tau_1 = 420$ ms.
+Avläsning ur grafen för $z(\tau)$ visade en topp vid $\tau = 420$ ms, vilket
+betydde att $\tau_2 - \tau_1 = 420$ ms.
 
 \subsection{Borttagning av eko}
-Värdet på $\tau_2 - \tau_1$ utnyttjades för att ta bort ekot från signalen. Vi
-vet från problemformuleringen att ekot är 0.9 gånger så starkt som signalen kommer
-till mottagaren först och att den dröjer med $\tau_2 - \tau_1$ sekunder. För
-att ta bort ekot subtraherar vi helt enkelt bort ekot genom att för varje
-sampel subtraheras med det värde $\tau_2 - \tau_1$ sekunder bak multiplicerat
-med 0.9, vilket görs med hjälp av en \textit{for-loop}. Denna procedur kördes
-nu innan I/Q-demoduleringen, vilket gjorde det enklare att höra
-innehållet i radiosignalen.
+Värdet på $\tau_2 - \tau_1$ utnyttjades för att ta bort ekoeffekten från signalen. Vi
+vet från problemformuleringen att ekot var 0.9 gånger så starkt som resten av signalen 
+och att den dröjde med $\tau_2 - \tau_1$ sekunder. För
+att ta bort ekot subtraherades helt enkelt ekot bort genom att för varje
+sampel subtrahera med det värde $\tau_2 - \tau_1$ sekunder bak i tiden multiplicerat
+med 0.9, vilket gjordes med hjälp av en \textit{for-loop}. Denna procedur kördes
+nu innan I/Q-demoduleringen, vilket gjorde innehållet av radiosignalen
+tillräckligt hörbar för att identifiera ordspråken.
 
 % \subsection{Bestämmande av $\delta$\label{sub:delta}}
 % 
@@ -170,16 +196,8 @@ Den sökta informationen är:
 
 \clearpage
 
+\onecolumn
 \section*{Min Python-kod:}
-\begin{spverbatim}
-clear all
-close all
-
-for k=1:...
-  ...
-end
-
-plot(...,...)
-\end{spverbatim}
+\lstinputlisting[language=Python]{../python/main.py}
 
 \end{document}

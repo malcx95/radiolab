@@ -4,8 +4,6 @@ from scipy import signal
 import os
 import matplotlib.pyplot as plt
 import numpy as np
-import math
-import taucalc
 
 RAW_FILE = 'signal-malvi108.wav'
 
@@ -14,6 +12,7 @@ OUTPUT_DIR = 'output'
 I_OUTPUT = 'i_signal.wav'
 Q_OUTPUT = 'q_signal.wav'
 
+# The ranges used for the band pass filtering
 TOP_SIGNAL_FILTER_RANGE = [125000, 136000]
 MIDDLE_SIGNAL_FILTER_RANGE = [88000, 100000]
 LOWER_SIGNAL_FILTER_RANGE = [45000, 65000]
@@ -21,12 +20,10 @@ W_RANGE = [139000, 144000]
 
 DELTA = 0.24
 
-W_F1 = 141500
-W_F2 = 141501
-W_FILTER_ORDER = 8
-
-# tau2 - tau1 in ms
+# tau2 - tau1
 TIME_DELAY = 0.420
+
+# the number of samples to use in the correlation
 SAMPLE_LENGTH = 100000
 
 ECHO_STRENGTH = 0.9
@@ -43,22 +40,12 @@ def low_pass_filter(data, order, cutoff, sample_rate):
     return signal.lfilter(b, a, data)
 
 
-def plot_filter(order, cutoff, sample_rate):
-    # b, a = signal.butter(order, 2 * cutoff / sample_rate, 'low', analog=False)
-    start, end = cutoff
-    b, a = signal.butter(order, [2 * start / sample_rate, 2 * end / sample_rate], 'bandpass', analog=False)
-    w, h = signal.freqz(b, a)
-    plt.plot(0.5 * sample_rate * w/math.pi, np.abs(h), 'b')
-    # plt.plot(cutoff, 0.5 * np.sqrt(2), 'ko')
-    # plt.axvline(cutoff, color='k')
-    plt.title('Butterworth filter frequency response')
-    plt.xlabel('Frequency [Hz]')
-    plt.grid(which='both', axis='both')
-    # plt.axvline(cutoff, color='green') # cutoff frequency
-    plt.show()
-
-
 def iq_demodulate(data, band, delta, sample_rate):
+    """
+    Removes echo from and I/Q-demodulates a given signal in a given band
+    (list of two frequencies) with a given phase shift delta. Returns the I
+    and Q components.
+    """
     start, end = band
     center_freq = (start + end) / 2
     bandwidth = end - start
@@ -94,6 +81,9 @@ def iq_demodulate(data, band, delta, sample_rate):
         
 
 def low_pass_plot_transform(data, sample_rate, cutoff):
+    """
+    Function for testing low pass filtering of a signal.
+    """
     num_samples = len(data)
 
     new_data = low_pass_filter(data, 20, cutoff, sample_rate)
@@ -114,6 +104,9 @@ def low_pass_plot_transform(data, sample_rate, cutoff):
 
 
 def band_pass_plot_transform(data, sample_rate, band, order=9):
+    """
+    Function for testing low pass filtering of a signal.
+    """
     num_samples = len(data)
 
     start, end = band
@@ -131,7 +124,7 @@ def band_pass_plot_transform(data, sample_rate, band, order=9):
     plt.grid()
 
     plt.subplot(2, 2, 2)
-    plt.plot(0.5 * sample_rate * w/math.pi, np.abs(h), 'g')
+    plt.plot(0.5 * sample_rate * w/np.pi, np.abs(h), 'g')
     plt.grid()
 
     # plot the filtered transform
@@ -150,6 +143,9 @@ def normalize(data):
 
 
 def plot_iq_signals(i_data, q_data, sample_rate):
+    """
+    Plots the I/Q components of a signal and their transforms.
+    """
     num_samples = len(i_data)
 
     i_transformed = fft(i_data)
@@ -180,6 +176,10 @@ def plot_iq_signals(i_data, q_data, sample_rate):
 
 
 def iq_demodulate_different_deltas(data, sample_rate):
+    """
+    I/Q-demodulates a signal with a bunch of different deltas, from 0 to pi/2, to
+    find out the optimal value of delta. Writes the files to the output directory.
+    """
     for n in range(10):
 
         d = n / 20
@@ -208,6 +208,9 @@ def remove_echo(data, sample_rate):
 
 
 def iq_demodulate_single(data, sample_rate, delta):
+    """
+    I/Q-demodulates the audio signal with one given delta. Writes output files and plots the signals.
+    """
     i, q = iq_demodulate(data, MIDDLE_SIGNAL_FILTER_RANGE, delta * np.pi, sample_rate)
 
     print("Normalizing...")
@@ -221,17 +224,10 @@ def iq_demodulate_single(data, sample_rate, delta):
     plot_iq_signals(i_norm, q_norm, sample_rate)
 
 
-def plot_w(data, sample_rate):
-    filtered_data = band_pass_filter(data, 7, *W_RANGE, sample_rate)
-    envelope = np.abs(signal.hilbert(filtered_data))
-    plt.rcParams['agg.path.chunksize'] = 1000
-    plt.plot(filtered_data, 'b')
-    plt.plot(envelope, 'g')
-    plt.grid()
-    plt.show()
-    
-
 def write_file(file_name, sample_rate, data):
+    """
+    Decimates a signal and writes a wav-file to the output directory.
+    """
     decimated = []
     for i in range(0, len(data), 10):
         decimated.append(data[i])
@@ -239,6 +235,9 @@ def write_file(file_name, sample_rate, data):
 
 
 def plot_signal_transform(data, sample_rate):
+    """
+    Plots the fourier transform of the raw signal.
+    """
     num_samples = len(data)
     transformed = fft(data)
 
@@ -251,7 +250,9 @@ def plot_signal_transform(data, sample_rate):
 
 
 def plot_correlation_function(data, sample_rate):
-
+    """
+    Calculates and plots the correlation function, for finding the time delay.
+    """
     noise = band_pass_filter(data, 10, *LOWER_SIGNAL_FILTER_RANGE, sample_rate)
 
     result = []
@@ -268,11 +269,12 @@ def plot_correlation_function(data, sample_rate):
         result.append(sum_)
 
     plt.plot(np.array(result), 'g')
-    plt.xlabel('Tidsfördröjning τ [ms]')
-    plt.ylabel('z(τ)')
+    # LaTeX listings doesn't support utf8-characters here, so the
+    # tau and "o was removed here when compiling this report.
+    plt.xlabel('Tidsfordrojning tau [ms]')
+    plt.ylabel('z(tau)')
     plt.grid()
     plt.show()
-
 
 
 def main():
@@ -281,34 +283,9 @@ def main():
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
 
-    plot_correlation_function(data, sample_rate)
-
-
-    # correlation = taucalc.correlation_function(noise, sample_rate)
-    # taucalc.plot_correlation(correlation)
-    
-    # y = band_pass_filter(data, W_FILTER_ORDER, *W_RANGE, sample_rate)
-    # y_transformed = fft(y)
-
-    # h_transformed = taucalc.get_h_transformed(y_transformed, len(y), sample_rate)
-
-    # print("H(f1) = {}, H(f2) = {}".format(h_transformed[W_F1], h_transformed[W_F2]))
-    # print("H(0) = {}".format(h_transformed[0]))
-
-    # xf = np.linspace(0.0, sample_rate // 2, len(y) // 2)
-    # plt.plot(xf, 2.0 / len(y) * np.abs(h_transformed[0:len(y) // 2]), 'b')
-
-    # H = taucalc.calculate_h_transformed(W_F1, W_F2)
-    # print(H)
-    
-    # iq_demodulate_single(data, sample_rate, 0.24)
-
-    # correlation_function(data, sample_rate)
-    # band_pass_plot_transform(data, sample_rate, W_RANGE, order=8)
-
-    # low_pass_plot_transform(data, sample_rate, 70000)
-    # band_pass_plot_transform(data, sample_rate, MIDDLE_SIGNAL_FILTER_RANGE)
+    # call functions from here...
     
 
 if __name__ == "__main__":
     main()
+
