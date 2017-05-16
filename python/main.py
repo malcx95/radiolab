@@ -27,6 +27,7 @@ W_FILTER_ORDER = 8
 
 # tau2 - tau1 in ms
 TIME_DELAY = 0.420
+SAMPLE_LENGTH = 100000
 
 ECHO_STRENGTH = 0.9
 
@@ -249,15 +250,39 @@ def plot_signal_transform(data, sample_rate):
     plt.show()
 
 
+def plot_correlation_function(data, sample_rate):
+
+    noise = band_pass_filter(data, 10, *LOWER_SIGNAL_FILTER_RANGE, sample_rate)
+
+    result = []
+    
+    dt = 1 / sample_rate
+
+    dtau = sample_rate // 1000
+    x_signal = noise[:SAMPLE_LENGTH]
+
+    for tau in range(500):
+        sum_ = 0
+        for i in range(len(x_signal)):
+            sum_ += x_signal[i] * noise[i + tau * dtau] * dt
+        result.append(sum_)
+
+    plt.plot(np.array(result), 'g')
+    plt.xlabel('Tidsfördröjning τ [ms]')
+    plt.ylabel('z(τ)')
+    plt.grid()
+    plt.show()
+
+
+
 def main():
     sample_rate, data = wavfile.read(RAW_FILE)
 
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
 
-    plot_signal_transform(data, sample_rate)
+    plot_correlation_function(data, sample_rate)
 
-    # noise = band_pass_filter(data, 10, *LOWER_SIGNAL_FILTER_RANGE, sample_rate)
 
     # correlation = taucalc.correlation_function(noise, sample_rate)
     # taucalc.plot_correlation(correlation)

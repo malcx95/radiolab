@@ -23,7 +23,7 @@
 
 \author{Malcolm Vigren \\ malvi108, 19950127-0970 }
 
-\date{xxx maj, 2017}
+\date{16 maj, 2017}
 
 \begin{document}
 
@@ -37,12 +37,12 @@ radiostationen signalen:
 \begin{align*}
     x(t) = x_I(t)\cos(2 \pi f_c t) - x_Q(t)\sin(2 \pi f_c t) + w(t) + z(t)
 \end{align*}
-där $x_Q(t)$ och $x_I(t)$ är de meddelanden som skulle lyssnas efter. De
-innehåller båda två olika melodier samt varsitt ordspråk som ska identifieras.
+där $x_Q(t)$ och $x_I(t)$ är de meddelanden som skulle lyssnas efter. 
+Båda innehöll två olika melodier samt varsitt ordspråk som skulle identifieras.
 $f_c$ är signalens bärfrekvens, $z(t)$ är en summa av andra I/Q-modulerade
 signaler och $w(t) = 0.001(\cos(2 \pi f_1 t) + \cos(2 \pi))$, där $f_1$ och
 $f_2$ ligger långt ifrån bärfrekvenserna hos de andra signalerna. En del av
-uppgiften är att ta reda på $f_c$, $f_1$ och $f_2$. $f_c$ var enligt
+uppgiften var att ta reda på $f_c$, $f_1$ och $f_2$. $f_c$ var enligt
 problemformuleringen en av följande frekvenser: 18, 37, 56, 75, 94, 113,
 132, 151 kHz.
 
@@ -51,15 +51,17 @@ ekoeffekt, sådan att vi tar emot signalen:
 \begin{align*}
     y(t) = x(t - \tau_1) + 0.9x(t - \tau_2)
 \end{align*}
-En del av uppgiften är att ta reda på fördröjningen mellan de olika signalerna,
-alltså $\tau_2 - \tau_1$. Denna är enligt problemformuleringen mindre än 500 ms
+En del av uppgiften var att ta reda på skillnaden i fördröjning mellan 
+de olika signalerna,
+alltså $\tau_2 - \tau_1$. Denna var enligt problemformuleringen mindre än 500 ms
 och en multipel av 1 ms.
 
-Signalen är sparad i en \textit{wav}-fil med sampelfrekvensen 400kHz.
+Signalen tillhandahölls i form av en \textit{wav}-fil med sampelfrekvensen 400kHz.
 
 \section{Metod}
 
-Detta avsnitt redogör hur den efterfrågade informationen togs fram.
+Uppgiften löstes med programmeringsspråket \textit{Python}, tillsammans med
+biblioteken \textit{numpy}, \textit{scipy} och \textit{matplotlib}.
 
 \subsection{Letande av kandidater till $f_c$ och bestämmande av $f_1$ och
 $f_2$}
@@ -68,7 +70,7 @@ För att ta reda på $f_c$ fouriertransformerades signalen i wav-filen, och
 amplitudspektrumet plottades, se Figur~\ref{fig:yamp}. 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\linewidth]{figures/yamp.pdf}
+    \includegraphics[width=0.8\linewidth]{figures/yamp.pdf}
     \caption{Amplitudspektrum för $y(t)$}
     \label{fig:yamp}
 \end{figure}
@@ -88,8 +90,8 @@ signalen multiplicerades med $2\cos(2\pi f_c t + \delta)$ och
 $-2\sin(2\pi f_c t + \delta)$ 
 för att få ut $x_I(t)$- respektive $x_Q(t)$-komponenterna av signalen.
 Konstanten $\delta$ finns som kompensation för fasvridningen signalen får efter
-att den skickats, som sattes till en början till 0. Hur $\delta$ bestämdes
-beskrivs i Avsnitt~\ref{sub:delta}. Båda
+att den skickats, som sattes till en början till 0 och prövades fram till
+värdet $0.24\pi$ genom upprepad demodulation med olika $\delta$. Båda
 lågpassfiltrerades sedan med ett digitalt butterworthfilter med samma bandbredd
 som signalerna för att filtrera
 bort de frekvenser som fortfarande fanns runt bärvågsfrekvensen.
@@ -103,7 +105,7 @@ liknande vitt brus.
 
 \subsection{Bestämmande av $\tau_2 - \tau_1$}
 För att bestämma fördröjningen $\tau_2 - \tau_1$ användes autokorrelation. För
-att göra detta utnyttjades det faktum att ett $\tau_2$ sekunder in i signalen
+att göra detta utnyttjades det faktum att $\tau_2$ sekunder in i signalen
 hörs inget eko, vilket betyder att man kan använda signalen fram till $\tau_d$
 sekunder som det som ska korreleras, där $\tau_d < \tau_2$.
 
@@ -111,10 +113,49 @@ Vi betecknar signalvärdet vid sampel $n$ som $y_n$. Vidare definierar vi korrel
 $z(\tau)$ som:
 
 \begin{equation*}
-    z(\tau) = \frac{1}{f_s}\sum_{i=0}^{\tau_d}y_iy_{i + \tau f_s}
+    z(\tau) = \frac{1}{f_s}\sum_{i=0}^{\tau_d - 1}y_iy_{i + \tau f_s}
 \end{equation*}
 
-\subsection{Bestämmande av $\delta$\label{sub:delta}}
+Detta gör att $z(\tau)$ blir ett mått på hur början av $y(t)$ upp till $\tau_d$
+"passar" med resten av $y(t)$ när det är förskjutet med $\tau$ sekunder. Vi
+borde därför se en topp i $z(\tau)$ vid $\tau = 0$ och en mindre topp där $\tau
+= \tau_2 - \tau_1$, eftersom det är då ekot börjar.
+
+$\tau_d$ valdes till 0.25 sekunder. Signalen som skulle korreleras valdes till det
+vita bruset observerat i Avsnitt~\ref{sub:iq}, så detta filtreras ut och
+$z(\tau)$ beräknades för $0 \leq \tau < 500$ ms, se Figur~\ref{fig:corr}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/corr.pdf}
+    \caption{Korrelationen $z(\tau)$}
+    \label{fig:corr}
+\end{figure}
+
+Avläsning ur grafen för $z(\tau)$ visar en topp vid $\tau = 420$ ms, vilket
+betyder att $\tau_2 - \tau_1 = 420$ ms.
+
+\subsection{Borttagning av eko}
+Värdet på $\tau_2 - \tau_1$ utnyttjades för att ta bort ekot från signalen. Vi
+vet från problemformuleringen att ekot är 0.9 gånger så starkt som signalen kommer
+till mottagaren först och att den dröjer med $\tau_2 - \tau_1$ sekunder. För
+att ta bort ekot subtraherar vi helt enkelt bort ekot genom att för varje
+sampel subtraheras med det värde $\tau_2 - \tau_1$ sekunder bak multiplicerat
+med 0.9, vilket görs med hjälp av en \textit{for-loop}. Denna procedur kördes
+nu innan I/Q-demoduleringen, vilket gjorde det enklare att höra
+innehållet i radiosignalen.
+
+% \subsection{Bestämmande av $\delta$\label{sub:delta}}
+% 
+% Fel värde på $\delta$ gör att $x_I(t)$ och $x_Q(t)$ blandas efter
+% demodulationen. Optimalt värde på $\delta$ är alltså det värde som gör att man
+% inte alls kan höra I-komponenten i Q-komponenten och vice versa. För att ta
+% reda på detta $\delta$ kördes I/Q-demodulerings- och ekoborttagningsrutinen på
+% flera olika värden på $\delta$, $0 \leq \delta < \frac{\pi}{2}$ i steg om
+% $0.05\pi$, och manuellt lyssnade på resultaten. Det visades att $0.25\pi$ gav
+% ett nästan perfekt resultat, vidare prövning gav att $\delta = 0.24\pi$ gav den
+% bästa separationen av $x_I(t)$ och $x_Q(t)$. Nu var signalerna så klara att
+% ordspråken kunde identifieras.
 
 \section{Resultat}
 
@@ -129,7 +170,7 @@ Den sökta informationen är:
 
 \clearpage
 
-\section*{Min Matlab-kod:}
+\section*{Min Python-kod:}
 \begin{spverbatim}
 clear all
 close all
