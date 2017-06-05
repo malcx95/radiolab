@@ -13,6 +13,7 @@
 %  Följande tillhandahåller miljön spver­ba­tim som är lämplig för att typsätta programkod.
 \usepackage{spverbatim}
 \usepackage{graphicx}
+\usepackage{icomma}
 
 \hyphenation{au-to-kor-re-la-ti-on}
 
@@ -65,7 +66,7 @@ radiostationen signalen:
 där $x_Q(t)$ och $x_I(t)$ är de meddelanden som skulle lyssnas efter. 
 Båda innehöll två olika melodier samt varsitt ordspråk som skulle identifieras.
 $f_c$ är signalens bärfrekvens, $z(t)$ är en summa av andra I/Q-modulerade
-signaler och $w(t) = 0.001(\cos(2 \pi f_1 t) + \cos(2 \pi f_2 t))$, där $f_1$ och
+signaler och $w(t) = 0,001(\cos(2 \pi f_1 t) + \cos(2 \pi f_2 t))$, där $f_1$ och
 $f_2$ ligger långt ifrån bärfrekvenserna hos de andra signalerna. En del av
 uppgiften var att ta reda på $f_c$, $f_1$ och $f_2$. $f_c$ var enligt
 problemformuleringen en av följande frekvenser: 18, 37, 56, 75, 94, 113,
@@ -74,7 +75,7 @@ problemformuleringen en av följande frekvenser: 18, 37, 56, 75, 94, 113,
 På grund av utformningen av miljön innehåller den mottagna signalen en
 ekoeffekt, sådan att vi tar emot signalen:
 \begin{align*}
-    y(t) = x(t - \tau_1) + 0.9x(t - \tau_2)
+    y(t) = x(t - \tau_1) + 0,9x(t - \tau_2)
 \end{align*}
 En del av uppgiften var att ta reda på skillnaden i fördröjning mellan 
 de olika signalerna,
@@ -140,11 +141,14 @@ betydde att $\tau_2 - \tau_1 = 420$ ms.
 
 \subsection{Borttagning av eko}
 Värdet på $\tau_2 - \tau_1$ utnyttjades för att ta bort ekoeffekten från signalen. Vi
-vet från problemformuleringen att ekot var 0.9 gånger så starkt som resten av signalen 
-och att den dröjde med $\tau_2 - \tau_1$ sekunder. För
-att ta bort ekot subtraherades helt enkelt ekot bort genom att för varje
-sampel subtrahera med det värde $\tau_2 - \tau_1$ sekunder bak i tiden multiplicerat
-med 0.9, vilket gjordes med hjälp av en \textit{for-loop}.
+vet från problemformuleringen att ekot var 0,9 gånger så starkt som resten av signalen 
+och att den dröjde med $\tau_2 - \tau_1$ sekunder. För att ta bort ekoeffekten
+användes $y_0(t) = y(t) - y_0(t - (\tau_2 - \tau_1))$, där $y_0(t)$ är signalen
+utan eko.
+% För
+% att ta bort ekot subtraherades helt enkelt ekot bort genom att för varje
+% sampel subtrahera med det värde $\tau_2 - \tau_1$ sekunder bak i tiden multiplicerat
+% med 0.9, vilket gjordes med hjälp av en \textit{for-loop}.
 % TODO equation
 
 % Denna procedur kördes
@@ -164,7 +168,7 @@ med 0.9, vilket gjordes med hjälp av en \textit{for-loop}.
 % ordspråken kunde identifieras.
 
 \subsection{I/Q-demodulering\label{sub:iq}}
-Innan demodulering gjordes bandpassfiltrerades $y(t)$ runt en av kandidaterna
+Innan demoduleringen bandpassfiltrerades $y(t)$ runt en av kandidaterna
 för bärfrekvenserna beskrivna i Avsnitt~\ref{sub:candidates} för att få bort de
 ointressanta signalerna. Vi betecknar den filtrerade $y(t)$ med borttagen
 ekoeffekt som $\hat{y}(t)$.
@@ -181,17 +185,22 @@ där $B$ är nyttosignalens bandbredd, avläst i Figur~\ref{fig:yamp} som 12 000
 kHz, och
 $\hat{x}_I(t)$ och $\hat{x}_Q(t)$ är de mottagna I- och Q-komponenterna som
 idealt ska vara lika med $x_I(t)$ och $x_Q(t)$.
-Konstanten $\delta$ representerar en kompensation den fasvridning signalen fått efter
-att den skickats över kanalen, eftersom det tagit tid för signalen att skickas
-över kanalen. Vi behöver rätt värde på konstanten, annars
-blandas I- och Q-komponenterna med varandra efter demoduleringen.
-Denna sattes till en början till 0 och prövades fram till
-värdet $0.24\pi$ genom upprepad demodulation med olika $\delta$.
+Konstanten $\delta$ representerar en kompensation för fasvridningen med 
+$-2\pi f_c \tau_1$ radianer signalen har fått efter
+att den skickats över kanalen, eftersom det har tagit $\tau_1$ sekunder för
+signalen att nå mottagaren. Ett felaktigt värde på $\delta$ gör att
+I- och Q-komponenterna blandas med varandra efter demoduleringen.
 
-Detta gjordes som sagt för varje av de intressanta banden i $y(t)$ för att ta
-reda på vilket band som innehöll det intressanta ljudet. Det visade sig att det
-band med mittenfrekvens 94 kHz innehöll något som liknade beskrivningen av
-ljudet i problemformuleringen. Därför drogs slutsatsen att $f_c = 94$ kHz.
+Först sattes $\delta = 0$ och signalen demodulerades för de olika
+frekvensbanden för att se vilket som innehöll det intressanta ljudet. Det
+visade sig att signalen med $f_c = 94$ kHz innehöll något som liknade det som
+beskrevs av problemformuleringen, det sökta $f_c$ var alltså 94 kHz.
+Nu kunde $\delta$ bestämmas, som prövades fram genom upprepad demodulation med olika $\delta$, och
+lyssna på vilket värde gjorde att man inte kunde höra en del av I-komponenten i
+Q-komponenten och vice versa. Endast värden mellan 0 och $2\pi$ behövde prövas,
+då större fasvridning leder till att signalerna i de demodulerade I- och Q-komponenterna byter plats.
+Prövningen gav värdet $0.24\pi$. Demodulation med detta värde på delta gjorde
+att ordspråken i meddelandena nu kunde identifieras.
 
 % För att demodulera signalen bandpassfiltrerades den för att extrahera
 % signalen för en viss bärfrekvens. Detta gjordes genom att bestämma vilka
