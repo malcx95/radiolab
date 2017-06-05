@@ -139,17 +139,16 @@ $z(\tau)$ beräknades för $0 \leq \tau < 500$ ms, se Figur~\ref{fig:corr}.
 Avläsning ur grafen för $z(\tau)$ visade en topp vid $\tau = 420$ ms, vilket
 betydde att $\tau_2 - \tau_1 = 420$ ms.
 
-\subsection{Borttagning av eko}
+\subsection{Borttagning av eko}\label{sub:echo}
 Värdet på $\tau_2 - \tau_1$ utnyttjades för att ta bort ekoeffekten från signalen. Vi
 vet från problemformuleringen att ekot var 0,9 gånger så starkt som resten av signalen 
 och att den dröjde med $\tau_2 - \tau_1$ sekunder. För att ta bort ekoeffekten
-användes $y_0(t) = y(t) - y_0(t - (\tau_2 - \tau_1))$, där $y_0(t)$ är signalen
-utan eko.
+användes $y_0(t) = y(t) - 0,9y_0(t - (\tau_2 - \tau_1))$, där $y_0(t)$ är signalen
+utan eko, vilket implementerades med en \textit{for-loop}.
 % För
 % att ta bort ekot subtraherades helt enkelt ekot bort genom att för varje
 % sampel subtrahera med det värde $\tau_2 - \tau_1$ sekunder bak i tiden multiplicerat
 % med 0.9, vilket gjordes med hjälp av en \textit{for-loop}.
-% TODO equation
 
 % Denna procedur kördes
 % nu innan I/Q-demoduleringen, vilket gjorde innehållet av radiosignalen
@@ -168,10 +167,10 @@ utan eko.
 % ordspråken kunde identifieras.
 
 \subsection{I/Q-demodulering\label{sub:iq}}
-Innan demoduleringen bandpassfiltrerades $y(t)$ runt en av kandidaterna
+Innan demoduleringen bandpassfiltrerades $y_0(t)$, signalen med borttagen
+ekoeffekt från Avsnitt~\ref{sub:echo}, runt en av kandidaterna
 för bärfrekvenserna beskrivna i Avsnitt~\ref{sub:candidates} för att få bort de
-ointressanta signalerna. Vi betecknar den filtrerade $y(t)$ med borttagen
-ekoeffekt som $\hat{y}(t)$.
+ointressanta signalerna. Vi betecknar den filtrerade $y_0(t)$ som $\hat{y}(t)$.
 För I/Q-demodulering av signalen användes sambanden
 
 \begin{equation*}
@@ -199,7 +198,7 @@ Nu kunde $\delta$ bestämmas, som prövades fram genom upprepad demodulation med
 lyssna på vilket värde gjorde att man inte kunde höra en del av I-komponenten i
 Q-komponenten och vice versa. Endast värden mellan 0 och $2\pi$ behövde prövas,
 då större fasvridning leder till att signalerna i de demodulerade I- och Q-komponenterna byter plats.
-Prövningen gav värdet $0.24\pi$. Demodulation med detta värde på delta gjorde
+Prövningen gav värdet $0.24\pi$. Demodulation med detta värde på $\delta$ gjorde
 att ordspråken i meddelandena nu kunde identifieras.
 
 % För att demodulera signalen bandpassfiltrerades den för att extrahera
