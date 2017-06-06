@@ -1,32 +1,20 @@
 \documentclass[10pt,twocolumn]{article}
-
-% Följande rad ska göra det möjligt att använda svenska bokstäver, som å, ä, ö. Kravet är 
-% då att filen sparas i UTF-8-format. Om detta inte fungerar för dig, så kan du alltid 
-% använda dig av {\aa} för å, \"a för ä och \"o för ö.
 \usepackage[utf8]{inputenc}
-
-% Följande väljer typsnitt som är kloner av Times New Roman, Helvetica och lämpliga till
-% dem anpassade matematiktypsnitt.
 \usepackage{newtxtext}
 \usepackage{newtxmath}
-
-%  Följande tillhandahåller miljön spver­ba­tim som är lämplig för att typsätta programkod.
 \usepackage{spverbatim}
 \usepackage{graphicx}
 \usepackage{icomma}
-
-\hyphenation{au-to-kor-re-la-ti-on}
-
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{color}
+\hyphenation{au-to-kor-re-la-ti-on}
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
 
 \lstset{%
-    aboveskip=3mm,
-    belowskip=3mm,
+    aboveskip=3mm, belowskip=3mm,
     showstringspaces=false,
     columns=flexible,
     basicstyle={\small\ttfamily},
@@ -110,7 +98,7 @@ bestämmas, då dessa var två mycket närliggande spikar vid 141500 respektive
 För att bestämma fördröjningen $\tau_2 - \tau_1$ användes autokorrelation. För
 att göra detta utnyttjades det faktum att $\tau_2$ sekunder in i signalen
 hörs inget eko, vilket betyder att man kan använda signalen fram till $\tau_d$
-sekunder som det som ska korreleras, för något $\tau_d < \tau_2$.
+sekunder som det som ska korreleras, för något $\tau_d < \tau_2 - \tau_1$.
 
 Vi betecknar signalvärdet vid sampel $n$ som $y_n$. Vidare definierar vi korrelationen
 $z(\tau)$ som, där $f_s$ är sampelfrekvensen:
@@ -143,8 +131,9 @@ betydde att $\tau_2 - \tau_1 = 420$ ms.
 Värdet på $\tau_2 - \tau_1$ utnyttjades för att ta bort ekoeffekten från signalen. Vi
 vet från problemformuleringen att ekot var 0,9 gånger så starkt som resten av signalen 
 och att den dröjde med $\tau_2 - \tau_1$ sekunder. För att ta bort ekoeffekten
-användes $y_0(t) = y(t) - 0,9y_0(t - (\tau_2 - \tau_1))$, där $y_0(t)$ är signalen
-utan eko, vilket implementerades med en \textit{for-loop}.
+användes $y_0(t) = y(t) - 0,9y_0(t - (\tau_2 - \tau_1))$ för alla $t > \tau_2
+- \tau_1$, där $y_0(t)$ är signalen
+utan ekoeffekt. Detta implementerades med en \textit{for-loop}.
 % För
 % att ta bort ekot subtraherades helt enkelt ekot bort genom att för varje
 % sampel subtrahera med det värde $\tau_2 - \tau_1$ sekunder bak i tiden multiplicerat
@@ -191,15 +180,16 @@ signalen att nå mottagaren. Ett felaktigt värde på $\delta$ gör att
 I- och Q-komponenterna blandas med varandra efter demoduleringen.
 
 Först sattes $\delta = 0$ och signalen demodulerades för de olika
-frekvensbanden för att se vilket som innehöll det intressanta ljudet. Det
+frekvensbanden för att ta reda på vilket som innehöll det intressanta ljudet. Det
 visade sig att signalen med $f_c = 94$ kHz innehöll något som liknade det som
 beskrevs av problemformuleringen, det sökta $f_c$ var alltså 94 kHz.
-Nu kunde $\delta$ bestämmas, som prövades fram genom upprepad demodulation med olika $\delta$, och
-lyssna på vilket värde gjorde att man inte kunde höra en del av I-komponenten i
-Q-komponenten och vice versa. Endast värden mellan 0 och $2\pi$ behövde prövas,
+Nu kunde $\delta$ bestämmas, som prövades fram genom att demodulera signalen med olika $\delta$, och
+lyssna på vilket $\delta$ gjorde att man inte kunde höra en del av I-komponenten i
+Q-komponenten och vice versa. Endast värden mellan 0 och $\frac{\pi}{2}$ behövde prövas,
 då större fasvridning leder till att signalerna i de demodulerade I- och Q-komponenterna byter plats.
 Prövningen gav värdet $0.24\pi$. Demodulation med detta värde på $\delta$ gjorde
-att ordspråken i meddelandena nu kunde identifieras.
+att ordspråken i meddelandena nu kunde identifieras i $\hat{x}_I(t)$ och
+$\hat{x}_Q(t)$.
 
 % För att demodulera signalen bandpassfiltrerades den för att extrahera
 % signalen för en viss bärfrekvens. Detta gjordes genom att bestämma vilka

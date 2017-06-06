@@ -190,8 +190,10 @@ def iq_demodulate_different_deltas(data, sample_rate):
         q_norm = normalize(q)
 
         print("Writing output files...")
-        write_file(os.path.join(OUTPUT_DIR, str(d).replace('.', '_') + I_OUTPUT), sample_rate, i_norm)
-        write_file(os.path.join(OUTPUT_DIR, str(d).replace('.', '_') + Q_OUTPUT), sample_rate, q_norm)
+        write_file(os.path.join(OUTPUT_DIR, 
+                                str(d).replace('.', '_') + I_OUTPUT), sample_rate, i_norm)
+        write_file(os.path.join(OUTPUT_DIR, 
+                                str(d).replace('.', '_') + Q_OUTPUT), sample_rate, q_norm)
         print("Done.")
 
 
