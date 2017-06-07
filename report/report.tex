@@ -9,6 +9,7 @@
 \usepackage{xcolor}
 \usepackage{color}
 \hyphenation{au-to-kor-re-la-ti-on}
+\hyphenation{kor-re-le-ras}
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
@@ -97,8 +98,8 @@ bestämmas, då dessa var två mycket närliggande spikar vid 141500 respektive
 \subsection{Bestämmande av $\tau_2 - \tau_1$}
 För att bestämma fördröjningen $\tau_2 - \tau_1$ användes autokorrelation. För
 att göra detta utnyttjades det faktum att $\tau_2$ sekunder in i signalen
-hörs inget eko, vilket betyder att man kan använda signalen fram till $\tau_d$
-sekunder som det som ska korreleras, för något $\tau_d < \tau_2 - \tau_1$.
+finns inget eko, vilket betyder att signalen fram till $\tau_d$
+sekunder kan användas som det som ska korreleras, för något $\tau_d < \tau_2 - \tau_1$.
 
 Vi betecknar signalvärdet vid sampel $n$ som $y_n$. Vidare definierar vi korrelationen
 $z(\tau)$ som, där $f_s$ är sampelfrekvensen:
@@ -113,7 +114,7 @@ Detta gör att $z(\tau)$ blir ett mått på hur början av $y(t)$ ($y(t)$ för $
 borde därför se en topp i $z(\tau)$ vid $\tau = 0$, eftersom signalerna är identiska då, och en mindre topp där $\tau
 = \tau_2 - \tau_1$, eftersom det är då ekot börjar.
 
-$\tau_d$ valdes till 0.25 sekunder. Signalen som skulle korreleras valdes till
+$\tau_d$ valdes till 0,25 sekunder. Signalen som skulle korreleras valdes till
 signalen med bärfrekvensen 56 kHz i Figur~\ref{fig:yamp}, eftersom denna hade
 en vågform som liknade vitt brus. Denna filtreras ut med ett bandpassfilter och
 $z(\tau)$ beräknades för $0 \leq \tau < 500$ ms, se Figur~\ref{fig:corr}.
@@ -133,7 +134,8 @@ vet från problemformuleringen att ekot var 0,9 gånger så starkt som resten av
 och att den dröjde med $\tau_2 - \tau_1$ sekunder. För att ta bort ekoeffekten
 användes $y_0(t) = y(t) - 0,9y_0(t - (\tau_2 - \tau_1))$ för alla $t > \tau_2
 - \tau_1$, där $y_0(t)$ är signalen
-utan ekoeffekt. Detta implementerades med en \textit{for-loop}.
+utan ekoeffekt, och för $t < \tau_2 - \tau_1$ är $y(t) = y_0(t)$. 
+Detta implementerades med en \textit{for-loop}.
 % För
 % att ta bort ekot subtraherades helt enkelt ekot bort genom att för varje
 % sampel subtrahera med det värde $\tau_2 - \tau_1$ sekunder bak i tiden multiplicerat
